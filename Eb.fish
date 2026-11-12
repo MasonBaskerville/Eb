@@ -12,17 +12,27 @@ function run_script --argument file_path
         if test -z "$trimmed"; or string match -q "#*" "$trimmed"
             continue
         end        
-        if string match -r '^Output\s*:\s* "(.*)"$' "$trimmed" > /dev/null
-            set -l msg (string match -r '^Output\s*:\s*"(.*)"$' "$trimmed")[2]
-            echo -n "$msg"
-
-        else if string match -r 'Set ([a-zA-Z_][a-zA-Z0-9_]*) = (.*)$' "$trimmed" > /dev/null
+        
+        if string match -r 'Set ([a-zA-Z_][a-zA-Z0-9_]*) = (.*)$' "$trimmed" > /dev/null
             set -l matches (string match -r 'Set ([a-zA-Z_][a-zA-Z0-9_]*) = (.*)$' "$trimmed")
             set -l var_name $matches[2]
             set -l var_val (string trim "$matches[3]")
 
             set -g $var_name $var_val
-        
+
+        else if string match -r '^Output\s*:\s*"(.*)"$' "$trimmed" > /dev/null
+            set -l raw_msg (string match -r '^Output\s*:\s*"(.*)"$' "$trimmed")[2]
+            if string match -q '*{\*}*' $raw_msg
+            end
+
+            if string  match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' $raw_msg > /dev/null
+                set -l var_name (string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' "$raw_msg")[2]
+                set -l var_val $$var_name
+                set -l final_msg (string replace -a "{$var_name}" "$var_val" "$raw_msg")
+                echo -n "$final_msg"
+            else
+                echo -n "$raw_msg"
+            end
         else if string match -r '^OutputLine\s*:\s*"(.*)"$' "$trimmed" > /dev/null
             set -l raw_msg (string match -r '^OutputLine\s*:\s*"(.*)"$' "$trimmed")[2]
             if string match -q '*{\*}*' $raw_msg
@@ -43,3 +53,10 @@ function run_script --argument file_path
 end
 
 run_script $argv[1]
+
+# need to add something so that variables can have a declared variable type. using a symbol to represent each type e.g.
+# int = int the reason it remains int is because in will be used in selection.
+# st = string
+# fl = float
+# bo = bool
+# ch = character
