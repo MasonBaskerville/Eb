@@ -25,14 +25,16 @@ function run_script --argument file_path
         
         else if string match -r '^OutputLine\s*:\s*"(.*)"$' "$trimmed" > /dev/null
             set -l raw_msg (string match -r '^OutputLine\s*:\s*"(.*)"$' "$trimmed")[2]
-            if string match -r '\{([a-zA-Z_][a-zA-Z0-9_]*)\}' "$raw_msg" > /dev/null
-                set -l var_match (string match -r '\{[a-zA-Z_][a-zA-Z0-9_]*\}' "$raw_msg")
-                set -l var_name $var_match[2]
+            if string match -q '*{\*}*' $raw_msg
+            end
+
+            if string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' $raw_msg > /dev/null
+                set -l var_name (string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' "$raw_msg")[2]
                 set -l var_val $$var_name
                 set -l final_msg (string replace -a "{$var_name}" "$var_val" "$raw_msg")
-                echo $final_msg
+                echo "$final_msg"
             else
-                echo $raw_msg
+                echo "$raw_msg"
             end
         else
             echo "Syntax error: Unknown command '$trimmed"

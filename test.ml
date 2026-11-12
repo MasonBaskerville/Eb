@@ -1,3 +1,3 @@
-
-Set x = 24
-OutputLine : "{x} is a variable value"
+OutputLine : "this is a test with the following variable"
+Set x = 17
+OutputLine : "i am {x} years old"
