@@ -20,8 +20,16 @@ function run_script --argument file_path
             set -l var_val (string trim "$matches[4]")
         
         if test "$var_type" = "INT"
-            if string match -r '^[0-9]+$' "$var_val" > /dev/null
-                set -g $var_name $var_val
+            set -l eval_expr "$var_val"
+            for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$eval_expr")
+                if set -q $v
+                    set -l v_val $$v
+                    set eval_expr (string replace -a "$v" "$v_val" "$eval_expr")
+                end
+            end
+            set -l calculated_val (math "$eval_expr" 2>/dev/null)
+            if test $status -eq 0; and string match -r '^-?[0-9]+$' "$calculated_val" > /dev/null
+                set -g $var_name $calculated_val
             else
                 echo "TypeError : Variable '$var_name' expected type INT but got '$var_val'"
             end
@@ -90,3 +98,5 @@ end
 
 run_script $argv[1]
 
+# need to do more complex mathematical operations next, like sin,cos,tan and powers and square roots.
+#maybe ill turn this into a mathematical programming language, by including things like integration, series, matrices. etc
