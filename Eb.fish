@@ -6,6 +6,9 @@ function run_script --argument file_path
         return 1
     end
 
+    set -l execute_block 1
+    set -l block_handled 0
+
     #tells it to act like an interpreter
     for line in (cat "$file_path")
         set -l trimmed (string trim "$line")
@@ -13,6 +16,88 @@ function run_script --argument file_path
         if test -z "$trimmed"; or string match -q "#*" "$trimmed"
             continue
         end    
+
+#SELECTION HANDLING------------------------------------------------------------------------
+        if string match -qr '^End$' "$trimmed"
+            set execute_block 1
+            set block_handled 0
+            continue
+        end
+
+        #ELSE BLOCK
+        if string match -qr '^Else$' "$trimmed"
+            if test "$block_handled" -eq 0
+                set execute_block 1
+                set block_handled 1
+            else
+                set execute_block 0
+                
+            end
+            continue
+        end
+
+        #ELSEIF BLOCK
+        if string match -qr '^ElseIf\s+(.*)$' "$trimmed"
+            if test "$block_handled" -eq 1
+                set execute_block 0
+                continue
+            end
+
+            set -l match_arr (string match -r '^ElseIf\s+(.*)$' "$trimmed")
+            set -l cond_expr "$match_arr[2]"
+            for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
+                if set -q $v
+                    set -l v_val $$v 
+                    set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
+                end
+            end
+
+            set execute_block 0
+            set -l test_expr "$cond_expr"
+            set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
+            set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
+            set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
+            set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
+            set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
+            set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
+            if test $test_expr 2>/dev/null
+                set execute_block 1
+                set block_handled 1
+            end
+            continue
+        end
+
+        
+        #IF BLOCK
+        if string match -qr '^If\s+(.*)$' "$trimmed"
+            set -l match_arr (string match -r '^If\s+(.*)$' "$trimmed")
+            set -l cond_expr "$match_arr[2]"
+            for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
+                if set -q $v
+                    set -l v_val $$v
+                    set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
+                end
+            end
+            set execute_block 0
+            set block_handled 0
+
+            set -l test_expr "$cond_expr"
+            set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
+            set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
+            set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
+            set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
+            set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
+            set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
+            if test $test_expr 2>/dev/null
+                echo "'$cond_expr' where x=$x"
+                set execute_block 1
+                set block_handled 1
+            end
+            continue
+        end
+        if test "$execute_block" -eq 0
+            continue
+        end
 
 #VARIABLE HANDLING AND MANIPULATION--------------------------------------------------------
 
@@ -249,6 +334,7 @@ function run_script --argument file_path
         else
             echo "'$var_name' is not a valid data type"
         end
+
 
 #OUTPUT FUNCTIONS -----------------------------------------------------------------
         #outputs on the same line like C# console.write();

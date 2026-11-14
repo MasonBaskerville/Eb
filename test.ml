@@ -1,16 +1,15 @@
-Set INT x = 2
-Set INT y = 4
-Set FLO z = rt(255,2)
-Set FLO a = sin(30 * pi/180)
-OutputLine : "{a} is a the answer to sin(30)"
-Set BOO name = true
-name = READ
-Output : "hello again {name}"
+Set INT x = 30
+If x > 25
+    OutputLine : "grade A"
 
-x = 4
+ElseIf x > 20
 
-OutputLine : "{x}"
+    OutputLine : "grade B"
 
+Else
+
+    OutputLine : "grade F"
+End
 
 
 
