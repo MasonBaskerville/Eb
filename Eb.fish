@@ -14,6 +14,7 @@ function run_script --argument file_path
             continue
         end    
 
+#VARIABLE HANDLING AND MANIPULATION--------------------------------------------------------
 
         if string match -qr '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$trimmed"    
             set -l match_arr (string match -r '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$trimmed" )
@@ -27,6 +28,8 @@ function run_script --argument file_path
             set -l expected_type $$var_type_var
             if test "$var_val" = "READ"
                 read -l user_input
+
+                #INT data type
                 if test "$expected_type" = "INT"
                     if string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
                         set -g $var_name "$user_input"
@@ -34,6 +37,8 @@ function run_script --argument file_path
                         echo "TypeError : variable '$var_name' expected type INT, but got '$user_input'"
                         return 1
                     end
+
+                #FLO data type
                 else if test "$expected_type" = "FLO"
                     if string match -r -- '^-?[0-9]+(\.[0-9]+)$' "$user_input" > /dev/null
                         if not string match -r '\.' "$user_input" > /dev/null
@@ -44,8 +49,27 @@ function run_script --argument file_path
                         echo "TypeError : variable '$var_name' expected type FLO, but got '$user_input'"
                         return 1
                     end
+                
+                #STR data type
                 else if test "$expected_type" = "STR"
                     set -g $var_name "$user_input"
+                
+                #CHA data type
+                else if test "$expected_type" = "CHA"
+                    if string match -r -- '^-?.$' "$user_input" > /dev/null
+                        set -l clean_val (string match -r '^-?.$' "$user_input")
+                        set -g $var_name "$clean_val"
+                    else
+                        echo "TypeError : variable '$var_name' expected type CHA, but got '$user_input'"
+                        return 1
+                    end
+                else if test "$expected_type" = "BOO"
+                    if string match -r -- '^(true|false)$' "$user_input" > /dev/null
+                        set -g $var_name "$user_input"
+                    else
+                        echo "TypeError : variable '$var_name' expected type BOO, but got '$user_input'"
+                        return 1
+                    end
                 else
                     echo "TypeError : variable '$var_name' expected type STR, but got '$user_input'"
                     return 1
@@ -85,6 +109,7 @@ function run_script --argument file_path
         if test "$var_val" = "READ"
             read -l user_input
 
+            #INT data type
             if test "$var_type" = "INT"
                 if string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
                     set -g $var_name "$user_input"
@@ -92,6 +117,8 @@ function run_script --argument file_path
                     echo "TypeError: variable '$var_name' expected type INT, but got '$user_input'"
                     return 1
                 end
+            
+            #FLO data type
             else if test "$var_type" = "FLO"
                 if string match -r -- '^-?[0-9]+(\.[0-9]+)$?' "$user_input" > /dev/null
                     if not string match -r '\.' "$user_input" > /dev/null
@@ -102,15 +129,38 @@ function run_script --argument file_path
                     echo "TypeError : variable '$var_name' expected type FLO, but got '$user_input'"
                     return 1
                 end
+            
+            #STR data type
             else if test "$var_type" = "STR"
                 set -g $var_name "$user_input"
+            
+            #CHA data type
+            else if test "$var_type" = "CHA"
+                if string match -r -- '^-?.$' "$user_input" > /dev/null
+                    set -l clean_val (string match -r '^-?.$' "$user_input")[2]
+                    set -g $var_name "$clean_val"
+                else
+                    echo "TypeError : variable '$var_name' expected CHA type, but got '$user_input'"
+                    return 1
+                end
+
+            #BOO data type
+            else if test "$var_type" = "BOO"
+                if string match -r -- '^(true|false)$' "$user_input" > /dev/null
+                    set -g $var_name "$user_input"
+                else
+                    echo "TypeError : variable '$var_name' expected type BOO, but got '$user_input'"
+                    return 1
+                end
             else
                 echo "NameError: : variable does not exist, create a variable using 'Set'"
                 return 1
             end
             continue
         end
-        
+
+#DATA TYPES -------------------------------------------------------------------------------------
+
         #INT DATA TYPE
         if test "$var_type" = "INT"
             set -l eval_expr "$var_val"
@@ -200,6 +250,7 @@ function run_script --argument file_path
             echo "'$var_name' is not a valid data type"
         end
 
+#OUTPUT FUNCTIONS -----------------------------------------------------------------
         #outputs on the same line like C# console.write();
         else if string match -r '^Output\s*:\s*"(.*)"$' "$trimmed" > /dev/null
             set -l raw_msg (string match -r '^Output\s*:\s*"(.*)"$' "$trimmed")[2]
@@ -208,7 +259,12 @@ function run_script --argument file_path
 
             if string  match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' $raw_msg > /dev/null
                 set -l var_name (string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' "$raw_msg")[2]
+                if not set -q $var_name
+                    echo "NameError : variable '$var_name' is not defined"
+                    return 1
+                end
                 set -l var_val $$var_name
+                
                 set -l final_msg (string replace -a "{$var_name}" "$var_val" "$raw_msg")
                 echo -n "$final_msg"
             else
@@ -223,6 +279,10 @@ function run_script --argument file_path
 
             if string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' $raw_msg > /dev/null
                 set -l var_name (string match -r '{([a-zA-Z_][a-zA-Z0-9_]*)}' "$raw_msg")[2]
+                if not set -q $var_name
+                    echo "NameError : variable '$var_name' is not defined"
+                    return 1
+                end
                 set -l var_val $$var_name
                 set -l final_msg (string replace -a "{$var_name}" "$var_val" "$raw_msg")
                 echo "$final_msg"

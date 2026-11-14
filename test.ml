@@ -3,13 +3,13 @@ Set INT y = 4
 Set FLO z = rt(255,2)
 Set FLO a = sin(30 * pi/180)
 OutputLine : "{a} is a the answer to sin(30)"
-Set STR name = ""
+Set BOO name = true
 name = READ
-OutputLine : "hello again {name}"
+Output : "hello again {name}"
 
 x = 4
 
-OutputLine : "{x} "
+OutputLine : "{x}"
 
 
 
