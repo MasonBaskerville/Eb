@@ -63,7 +63,7 @@ function run_script --argument file_path
                 set eval_expr (string replace "$full_match" "pow($base , 1.0/$root)" "$eval_expr")
             end
             set -l calculated_val (math "$eval_expr" 2>/dev/null)
-            if test $status -eq 0; and string match -r '^-?[0-9]+(\.[0-9]+)?$' "$calculated_val" > /dev/null
+            if test $status -eq 0; and string match -r -- '^-?[0-9]+(\.[0-9]+)?$' "$calculated_val" > /dev/null
                 if not string match -r '\.' "$calculated_val" > /dev/null
                     set calculated_val "$calculated_val.0"
                 end
