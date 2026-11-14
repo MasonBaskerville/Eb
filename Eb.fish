@@ -29,23 +29,6 @@ function run_script --argument file_path
                 end
             end
             
-            #sq(base,exponent) function
-            while string match -qr 'sq\s*\((.*?),\s*(.*?)\)' "$eval_expr"
-                set -l sq_match (string match -r 'sq\s*\((.*?),\s*(.*?)\)' "$eval_expr")
-                set -l full_match $sq_match[1]
-                set -l base (string trim "$sq_match[2]")
-                set -l exp (string trim "$sq_match[3]")
-                set eval_expr (string replace "$full_match" "pow($base,$exp)" "$eval_expr")
-            end
-
-            #rt(num,root)
-            while string match -qr 'rt\s*\((.*?),\s*(.*?)\)' "$eval_expr"
-                set -l rt_match (string match -r 'rt\s*\((.*?),\s*(.*?)\)' "$eval_expr")
-                set -l full_match $rt_match[1]
-                set -l base (string trim "$rt_match[2]")
-                set -l root (string trim "$rt_match[3]")
-                set eval_expr (string replace "$full_match" "pow($base , 1.0/$root)" "$eval_expr")
-            end
             set -l calculated_val (math "$eval_expr" 2>/dev/null)
             if test $status -eq 0; and string match -r '^-?[0-9]+$' "$calculated_val" > /dev/null
                 set -g $var_name $calculated_val
