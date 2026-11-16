@@ -1,8 +1,8 @@
-Set INT x = 4
-Set INT y = 15
+Set INT x = 5
+Set INT y = 12
 if(x == 5){
     OutputLine : "the number is 5"
-    if(y == 3){
+    if(y == 15){
         OutputLine : "y is 15"
     }
     else{
