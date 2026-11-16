@@ -18,60 +18,24 @@ function run_script --argument file_path
         end    
 
 #SELECTION HANDLING------------------------------------------------------------------------
-        if string match -qr '^End$' "$trimmed"
+        if string match -qr '^\}$' "$trimmed"
             set execute_block 1
             set block_handled 0
             continue
         end
 
-        #ELSE BLOCK
-        if string match -qr '^Else$' "$trimmed"
+        if string match -qr '(\}\s*)?else\s*\{$' "$trimmed"
             if test "$block_handled" -eq 0
                 set execute_block 1
                 set block_handled 1
             else
                 set execute_block 0
-                
             end
             continue
         end
 
-        #ELSEIF BLOCK
-        if string match -qr '^ElseIf\s+(.*)$' "$trimmed"
-            if test "$block_handled" -eq 1
-                set execute_block 0
-                continue
-            end
-
-            set -l match_arr (string match -r '^ElseIf\s+(.*)$' "$trimmed")
-            set -l cond_expr "$match_arr[2]"
-            for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
-                if set -q $v
-                    set -l v_val $$v 
-                    set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
-                end
-            end
-
-            set execute_block 0
-            set -l test_expr "$cond_expr"
-            set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
-            set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
-            set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
-            set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
-            set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
-            set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
-            if test $test_expr 2>/dev/null
-                set execute_block 1
-                set block_handled 1
-            end
-            continue
-        end
-
-        
-        #IF BLOCK
-        if string match -qr '^If\s+(.*)$' "$trimmed"
-            set -l match_arr (string match -r '^If\s+(.*)$' "$trimmed")
-            set -l cond_expr "$match_arr[2]"
+        if string match -qr '^if\s*\((.*)\)\s*\{$' "$trimmed"
+            set -l cond_expr (string match -r '^if\s*\((.*)\)\s*\{$' "$trimmed")[2]
             for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
                 if set -q $v
                     set -l v_val $$v
@@ -81,23 +45,118 @@ function run_script --argument file_path
             set execute_block 0
             set block_handled 0
 
-            set -l test_expr "$cond_expr"
-            set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
-            set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
-            set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
-            set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
-            set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
-            set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
-            if test $test_expr 2>/dev/null
-                echo "'$cond_expr' where x=$x"
-                set execute_block 1
-                set block_handled 1
+            set -l parts (string match -r '\s*([0-9.-]+)\s*(==|!=|>=|<=|>|<)\s*([0-9])' "$cond_expr")
+            if test (count $parts) -eq 4
+                set -l lhs $parts[2]
+                set -l op $parts[3]
+                set -l rhs $parts[4]
+                set -l is_true 0
+
+                switch $op
+                    case '>'
+                        test "$lhs" -gt "$rhs" 2>/dev/null; and set is_true 1
+                    case '<'
+                        test "$lhs" -lt "$rhs" 2>/dev/null; and set is_true 1
+                    case '>='
+                        test "$lhs" -ge "$rhs" 2>/dev/null; and set is_true 1
+                    case '<='
+                        test "$lhs" -le "$rhs" 2>/dev/null; and set is_true 1
+                    case '=='
+                        test "$lhs" -eq "$rhs" 2>/dev/null; and set is_true 1
+                    case '!='
+                        test "$lhs" -ne "$rhs" 2>/dev/null; and set is_true 1
+                end
+                if test "$is_true" -eq 1
+                    set execute_block 1
+                    set block_handled 1
+                end
             end
             continue
         end
+
         if test "$execute_block" -eq 0
             continue
         end
+        #if string match -qr '^End$' "$trimmed"
+        #    set execute_block 1
+        #    set block_handled 0
+        #    continue
+        #end
+
+        #ELSE BLOCK
+        #if string match -qr '^Else$' "$trimmed"
+        #    if test "$block_handled" -eq 0
+        #        set execute_block 0
+        #        set block_handled 1
+        #    else
+        #        set execute_block 0
+        #        
+        #    end
+        #    continue
+        #end
+
+        #ELSEIF BLOCK
+        #if string match -qr '^ElseIf\s+(.*)$' "$trimmed"
+        #    if test "$block_handled" -eq 1
+        #        set execute_block 1
+        #        continue
+        #    end
+
+        #    set -l match_arr (string match -r '^ElseIf\s+(.*)$' "$trimmed")
+        #    set -l cond_expr "$match_arr[2]"
+        #    for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
+        #        if set -q $v
+        #            set -l v_val $$v 
+        #            set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
+        #        end
+        #   end
+
+        #    set execute_block 0
+        #    set -l test_expr "$cond_expr"
+        #    set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
+        #    set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
+        #    set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
+        #    set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
+        #    set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
+        #   set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
+        #    if test $test_expr 2>/dev/null
+        #        set execute_block 0
+        #        set block_handled 0
+        #    end
+        #    continue
+        #end
+
+        
+        #IF BLOCK
+        #if string match -qr '^If\s+(.*)$' "$trimmed"
+        #    set -l match_arr (string match -r '^If\s+(.*)$' "$trimmed")
+        #    set -l cond_expr "$match_arr[2]"
+        #    for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
+        #        if set -q $v
+        #            set -l v_val $$v
+        #            set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
+        #        end
+        #    end
+        #    set execute_block 1
+        #    set block_handled 0
+
+        #    set -l test_expr "$cond_expr"
+        #    set test_expr (string replace -r -- '>' '-gt' -- "$test_expr")
+        #    set test_expr (string replace -r -- '<' '-lt' -- "$test_expr")
+        #    set test_expr (string replace -r -- '>=' '-ge' -- "$test_expr")
+        #    set test_expr (string replace -r -- '<=' '-le' -- "$test_expr")
+        #    set test_expr (string replace -r -- '==' '-eq' -- "$test_expr")
+        #    set test_expr (string replace -r -- '!=' '-ne' -- "$test_expr")
+        #    if test $test_expr 2>/dev/null
+        #        echo "'$cond_expr' where x=$x"
+        #        set execute_block 1
+        #        set block_handled 1
+        #    end
+        #   continue
+        #end
+        #if test "$execute_block" -eq 0
+        #   continue
+        #end
 
 #VARIABLE HANDLING AND MANIPULATION--------------------------------------------------------
 

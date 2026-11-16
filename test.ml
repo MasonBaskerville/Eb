@@ -1,16 +1,23 @@
-Set INT x = 30
-If x > 25
-    OutputLine : "grade A"
-
-ElseIf x > 20
-
-    OutputLine : "grade B"
-
-Else
-
-    OutputLine : "grade F"
-End
-
+Set INT x = 4
+Set INT y = 15
+if(x == 5){
+    OutputLine : "the number is 5"
+    if(y == 3){
+        OutputLine : "y is 15"
+    }
+    else{
+        OutputLine : "y is not 15"
+    }
+}
+else{
+    OutputLine : "the number is not 5"
+    if(y == 15){
+        OutputLine : "this is a nested selection test"
+    }
+    else{
+        OutputLine : "this is a test of nested else"
+    }
+}
 
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
