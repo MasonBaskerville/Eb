@@ -9,3 +9,33 @@ selection.
 
 later improvements :
 -allow for connectives e.g. AND , OR etc.
+
+
+tracking executed blocks:
+--------------------------
+
+-variables : block_handled, execute_block, block_completion
+
+-block_handled holds a value which says wetehr or not a block has been completed
+and if the program needs to stop or carry OutputLine
+
+-execute_block holds a value which tells the block whether it should be
+executed or not.
+
+-block_completion tells the next block that a previos block has been handled
+and future blocks can be ignored.
+
+method:
+----------
+
+1. check condition in if block
+2. if condtion is true then complete instructions within the block
+3. if condtion is false then see if there is a else if condition
+4. if one exists check the condiotns on it and complete its instructions if its true
+5. repeat 3-4 till no more else if statemets exists
+6. go to the else statment only if every other statment reutrned false and complete its instrucitons.
+
+-current position:
+-----------------------------
+-the logic for the else if statement is the same as the if statement
+-the problem is finding a way for the condtions to be tracked accordingly

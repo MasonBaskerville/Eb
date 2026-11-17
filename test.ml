@@ -1,10 +1,14 @@
-Set INT x = 5
+Set INT x = 6
 Set INT y = 12
 if (x == 5){
     OutputLine : "this is the if statement"
+else if(x == 6){
+    OutputLine : "this is an else if statement"
+}
 }
 else{
     OutputLine : "this is the else statement"
+    
 }
 
 

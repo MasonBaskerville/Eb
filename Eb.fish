@@ -51,48 +51,27 @@ function run_script --argument file_path
             continue
         end
 
-        if string match -qr '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed"
-            if string match -qr '^\}' "$trimmed"
-                if test (count $exec_stack) -gt 0
-                    if test "$exec_stack[-1]" -eq 1
-                        set last_handled 1
-                    end
-                    set -e exec_stack[-1]
-                end
-            end
-
+         if string match -qr '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed"
             if contains 0 $exec_stack
                 set -a exec_stack 0
                 continue
             end
-            set -l cond_expr (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")[3]
-            if test "$last_handled" -eq 1
-                set -a exec_stack 0
-                continue
-            end
-            
-            #if string match -qr '^\}$' "$trimmed"
-            #    if test (count $exec_stack) -gt 0
-            #        if test "$exec_stack[-1]" -eq 1
-            #            set last_handled 1
-            #        end
-            #        set -e exec_stack[-1]
-            #    end
-            #    continue
-            #end
+            set -l cond_expr (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")[2]
             for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$cond_expr")
                 if set -q $v
-                    set -l v_val $$v 
+                    set -l v_val $$v
                     set cond_expr (string replace -ra "\\b$v\\b" "$v_val" "$cond_expr")
                 end
             end
-            
-            set -l is_true 0
+            #set execute_block 0
+            #set block_handled 0
+            set -l is_true 
             set -l parts (string match -r '\s*([0-9.-]+)\s*(==|!=|>=|<=|>|<)\s*([0-9.-]+)\s*$' "$cond_expr")
             if test (count $parts) -eq 4
                 set -l lhs $parts[2]
                 set -l op $parts[3]
                 set -l rhs $parts[4]
+                
 
                 switch $op
                     case '>'
@@ -109,12 +88,10 @@ function run_script --argument file_path
                         test "$lhs" -ne "$rhs" 2>/dev/null; and set is_true 1
                 end
             end
+            set last_handled 0
             set -a exec_stack $is_true
             continue
         end
-        #if contains 0 $exec_stack
-        #    continue
-        #end
 
 
         if string match -qr '^if\s*\((.*)\)\s*\{$' "$trimmed"
