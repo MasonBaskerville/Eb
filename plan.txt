@@ -1,0 +1,11 @@
+selection plan:
+
+requirements:
+-a way of tracking if a block has been executed
+making other block void
+-a way of allowing nested selection to dictate the parent
+selection.
+-allowing for multiple else if statements
+
+later improvements :
+-allow for connectives e.g. AND , OR etc.
