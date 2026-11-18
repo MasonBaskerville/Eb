@@ -86,7 +86,7 @@ function run_script --argument file_path
         end    
 #ITERATION HANDLING------------------------------------------------------------------------
         if string match -qr '^while\s*\((.*)\)\s*\{$' "$trimmed"
-            
+
 #SELECTION HANDLING------------------------------------------------------------------------
         
         #IF STATEMENT
@@ -95,28 +95,37 @@ function run_script --argument file_path
                 set -g pending_close 0
                 set -e exec_stack[-1]
                 set -e done_stack[-1]
+                set -e block_type[-1]
+                set -e loop_start[-1]
             end
             set -l parent_exec $exec_stack[-1]
             if test "$parent_exec" -eq 0
                 set -a exec_stack 0
                 set -a done_stack 1
+                set -a block_type "if"
+                set -a loop_start 0
             else
                 set -l cond_expr (string match -r '^if\s*\((.*)\)\s*\{$' "$trimmed")[2]
                 if eval_cond "$cond_expr"
                     set -a exec_stack 1
                     set -a done_stack 1
+                    set -a block_type "if"
+                    set -a loop_start 0
                 else
                     set -a exec_stack 0
                     set -a done_stack 0
+                    set -a block_type "if"
+                    set -a loop_start 0
                 end
             end
+            set pc (math "$pc+1")
             continue
         end
 
         #ELSE IF STATEMENT
         if string match -qr '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed"
             set -g pending_close 0
-            if test (count $exec_stack) -lt 2
+            if test (count $exec_stack) -lt 2; or test "$block_type[-1]" != "if"
                 echo "SyntaxError: 'else if' without matching 'if'"
                 return 1
             end
@@ -138,7 +147,7 @@ function run_script --argument file_path
         #ELSE STATEMENT
         if string match -qr '^(\}\s*)?else\s*\{$' "$trimmed"
             set -g pending_close 0
-            if test (count $exec_stack) -lt 2
+            if test (count $exec_stack) -lt 2; or test "$block_type[-1]" != "if"
                 echo "SyntaxError: 'else' without matching 'if'"
                 return 1
             end
@@ -149,6 +158,7 @@ function run_script --argument file_path
                 set exec_stack[-1] 1
                 set done_stack[-1] 1
             end
+            set pc (math "$pc+1")
             continue
         end
 
@@ -157,6 +167,9 @@ function run_script --argument file_path
             if test "$pending_close" = "1"
                 set -e exec_stack[-1]
                 set -e done_stack[-1]
+                set -e block_type[-1]
+                set -e loop_start[-1]
+                set -g pending_close 0
             end
             if test (count $exec_stack) -le 1
                 echo "SyntaxError: unexpected '}'"

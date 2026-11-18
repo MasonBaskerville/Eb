@@ -16,6 +16,13 @@ function eval_cond --argument cond_expr
         end
     end
 
+    set -l trimmed_cond (string trim "$cond_expr")
+    if test "$trimmed_cond" = "true"
+        return 0
+    else if test "$trimmed_cond" = "false"
+        return 1
+    end
+
     set -l str_parts (string match -r '^\s*"(.*)"\s*(==|!=)\s*"(.*)"\s*$' "$cond_expr")
     if test (count $str_parts) -eq 4
         set -l lhs $str_parts[2]
@@ -89,6 +96,8 @@ function run_script --argument file_path
     set -l exec_stack 1
     set -l done_stack 0
     set -g pending_close 0
+    set -l block_type "root"
+    set -l loop_start 0
 
     while test "$pc" -le "$total_lines"
         set -l trimmed (string trim "$lines[$pc]")
@@ -104,7 +113,38 @@ function run_script --argument file_path
         #    continue
         #end    
 #ITERATION HANDLING------------------------------------------------------------------------
-    
+    if string match -qr '^while\s*\((.*)\)\s*\{$' "$trimmed"
+        if test "$pending_close" = "1"
+            set -g pending_close 0
+            set -e exec_stack[-1]
+            set -e done_stack[-1]
+            set -e block_type[-1]
+            set -e loop_start[-1]
+        end
+
+        set -l parent_exec $exec_stack[-1]
+        if test "$parent_exec" -eq 0
+            set -a exec_stack 0
+            set -a done_stack 1
+            set -a block_type "while"
+            set -a loop_start $pc
+        else
+            set -l cond_expr (string match -r '^while\s*\((.*)\)\s*\{$' "$trimmed")[2]
+            if eval_cond "$cond_expr"
+                set -a exec_stack 1
+                set -a done_stack 1
+                set -a block_type "while"
+                set -a loop_start $pc
+            else
+                set -a exec_stack 0
+                set -a done_stack 1
+                set -a block_type "while"
+                set -a loop_start $pc
+            end
+        end
+        set pc (math "$pc+1")
+        continue
+    end
             
 #SELECTION HANDLING------------------------------------------------------------------------
         
@@ -114,19 +154,27 @@ function run_script --argument file_path
                 set -g pending_close 0
                 set -e exec_stack[-1]
                 set -e done_stack[-1]
+                set -e block_type[-1]
+                set -e loop_start[-1]
             end
             set -l parent_exec $exec_stack[-1]
             if test "$parent_exec" -eq 0
                 set -a exec_stack 0
                 set -a done_stack 1
+                set -a block_type "if"
+                set -a loop_start 0
             else
                 set -l cond_expr (string match -r '^if\s*\((.*)\)\s*\{$' "$trimmed")[2]
                 if eval_cond "$cond_expr"
                     set -a exec_stack 1
                     set -a done_stack 1
+                    set -a block_type "if"
+                    set -a loop_start 0
                 else
                     set -a exec_stack 0
                     set -a done_stack 0
+                    set -a block_type "if"
+                    set -a loop_start 0
                 end
             end
             set pc (math "$pc+1")
@@ -136,7 +184,7 @@ function run_script --argument file_path
         #ELSE IF STATEMENT
         if string match -qr '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed"
             set -g pending_close 0
-            if test (count $exec_stack) -lt 2
+            if test (count $exec_stack) -lt 2; or test "$block_type[-1]" != "if"
                 echo "SyntaxError: 'else if' without matching 'if'"
                 return 1
             end
@@ -179,10 +227,28 @@ function run_script --argument file_path
             if test "$pending_close" = "1"
                 set -e exec_stack[-1]
                 set -e done_stack[-1]
+                set -e block_type[-1]
+                set -e loop_start[-1]
+                set -g pending_close 0
             end
             if test (count $exec_stack) -le 1
                 echo "SyntaxError: unexpected '}'"
                 return 1
+            end
+            if test "$block_type[-1]" = "while"
+                set -l jump_target $loop_start[-1]
+                set -l was_running $exec_stack[-1]
+                set -e exec_stack[-1]
+                set -e done_stack[-1]
+                set -e block_type[-1]
+                set -e loop_start[-1]
+                if test "$was_running" -eq 1
+                    set pc $jump_target
+                    continue
+                else
+                    set pc (math "$pc+1")
+                    continue
+                end
             end
             set -g pending_close 1
             set pc (math "$pc+1")
@@ -193,9 +259,33 @@ function run_script --argument file_path
             set -g pending_close 0
             set -e exec_stack[-1]
             set -e done_stack[-1]
+            set -e block_type[-1]
+            set -e loop_start[-1]
         end
 
         if test "$exec_stack[-1]" -eq 0
+            set pc (math "$pc+1")
+            continue
+        end
+
+        #BREAK COMMAND
+        if string match -qr '^break$' "$trimmed"
+            set -l target_idx 0
+            set -l stack_len (count $block_type)
+            for i in (seq $stack_len -1 1)
+                if test "$block_type[$i]" = "while"
+                    set target_idx $i
+                    break
+                end
+            end
+            if test "$target_idx" -eq 0
+                echo "SyntaxError: 'break' outsdie of a loop"
+                return 1
+            end
+
+            for j in (seq $target_idx $stack_len)
+                set exec_stack[$i] 0
+            end
             set pc (math "$pc+1")
             continue
         end

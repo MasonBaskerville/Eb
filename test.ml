@@ -1,16 +1,14 @@
-Set INT x = 5
+Set INT x = 1
 Set INT y = 2
-if (x == 5){
-    if (y == 2){
-        OutputLine : "nested selection works!!"
+while(true){
+    if(x==0){
+        OutputLine:"FIRST"
     }
     else{
-        OutputLine  : "nested selection may work"
+        OutputLine:"SECONDARY"
     }
 }
-else{
-    OutputLine : "nested selection failed"
-}
+
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
 #degrees, the conversion must be inputed into the variable input: Set FLO z = sin(30 * pi/180)
