@@ -74,17 +74,38 @@ function run_script --argument file_path
         return 1
     end
 
+    set -l lines
+    while read -l raw_line; or test -n "$raw_line"
+        set -a lines "$raw_line"
+    end < "$file_path"
+
+    set -l total_lines (count $lines)
+    if test "$total_lines" -eq 0
+        echo "Error: '$file_path' is empty"
+        return 1
+    end
+
+    set -l pc 1
     set -l exec_stack 1
     set -l done_stack 0
+    set -g pending_close 0
 
-    #tells it to act like an interpreter
-    for line in (cat "$file_path")
-        set -l trimmed (string trim "$line")
-
+    while test "$pc" -le "$total_lines"
+        set -l trimmed (string trim "$lines[$pc]")
         if test -z "$trimmed"; or string match -q "#*" "$trimmed"
+            set pc (math "$pc+1")
             continue
-        end    
+        end
+    #tells it to act like an interpreter
+    #for line in (cat "$file_path")
+    #    set -l trimmed (string trim "$line")
 
+        #if test -z "$trimmed"; or string match -q "#*" "$trimmed"
+        #    continue
+        #end    
+#ITERATION HANDLING------------------------------------------------------------------------
+    
+            
 #SELECTION HANDLING------------------------------------------------------------------------
         
         #IF STATEMENT
@@ -108,6 +129,7 @@ function run_script --argument file_path
                     set -a done_stack 0
                 end
             end
+            set pc (math "$pc+1")
             continue
         end
 
@@ -130,6 +152,7 @@ function run_script --argument file_path
                     set exec_stack[-1] 0
                 end
             end
+            set pc (math "$pc+1")
             continue
         end
 
@@ -147,6 +170,7 @@ function run_script --argument file_path
                 set exec_stack[-1] 1
                 set done_stack[-1] 1
             end
+            set pc (math "$pc+1")
             continue
         end
 
@@ -161,6 +185,7 @@ function run_script --argument file_path
                 return 1
             end
             set -g pending_close 1
+            set pc (math "$pc+1")
             continue
         end
 
@@ -171,6 +196,7 @@ function run_script --argument file_path
         end
 
         if test "$exec_stack[-1]" -eq 0
+            set pc (math "$pc+1")
             continue
         end
 
@@ -234,6 +260,7 @@ function run_script --argument file_path
                     echo "TypeError : variable '$var_name' expected type STR, but got '$user_input'"
                     return 1
                 end
+                set pc (math "$pc+1")
                 continue
             end
 
@@ -255,6 +282,7 @@ function run_script --argument file_path
             else
                 echo "NameError : variable '$var_name' is not defined, use 'Set' first"
             end
+        set pc (math "$pc+1")
         continue
         end
         
@@ -316,6 +344,7 @@ function run_script --argument file_path
                 echo "NameError: : variable does not exist, create a variable using 'Set'"
                 return 1
             end
+            set pc (math "$pc+1")
             continue
         end
 
@@ -454,15 +483,21 @@ function run_script --argument file_path
         else
             echo "Syntax error: Unknown command '$trimmed"
         end
-        
-        
+        set pc (math "$pc+1")
     end
-end
-if test "$pending_close" = "1"
-    set -g pending_close 0
-    set -e exec_stack[-1]
-    set -e done_stack[-1]
-end
+    if test "$pending_close" = "1"
+        set -g pending_close 0
+        set -e exec_stack[-1]
+        set -e done_stack[-1]
+    end
+    if test (count $exec_stack) -gt 1
+        echo "SyntaxError: unclosed '{' block at the end of file"
+        return 1
+    end
+end       
+        
+
+
 
 
 run_script $argv[1]

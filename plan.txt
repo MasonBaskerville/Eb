@@ -1,41 +1,32 @@
-selection plan:
+iteration is the next stage
 
-requirements:
--a way of tracking if a block has been executed
-making other block void
--a way of allowing nested selection to dictate the parent
-selection.
--allowing for multiple else if statements
+-introduce a simple while loop with true or false condtions where break can be used to escape
+the while loop, then later allow variable conditions to dictate when to break out of a while 
+loop
 
-later improvements :
--allow for connectives e.g. AND , OR etc.
+-then a for loop, make a for loop in format : for (int i=0:i<"whatever it may be":i++){}
+then allow for more complex for loops, e.g. for var in list. etc. however this adidtional for loop
+may require a new data structure, which would be lists, arrays, tuples. etc
 
+challenges:
+-------------------
+-as this whole file runs thorugh a for loop, this will need to be changed in order to
+keep the while loops functional and simple to program and maintain without encoutnering bugs
 
-tracking executed blocks:
---------------------------
+-being able to jump from one line to another, so hopefully fish has a built in jump
+command which would be very useful.
 
--variables : block_handled, execute_block, block_completion
+-updating conditions without breaking the functionality of the while and for
+loops.
 
--block_handled holds a value which says wetehr or not a block has been completed
-and if the program needs to stop or carry OutputLine
+-when a break command is seen, knowing which line to skip to, this may reintroduce
+the issue i had with th else if statement.
 
--execute_block holds a value which tells the block whether it should be
-executed or not.
-
--block_completion tells the next block that a previos block has been handled
-and future blocks can be ignored.
-
-method:
-----------
-
-1. check condition in if block
-2. if condtion is true then complete instructions within the block
-3. if condtion is false then see if there is a else if condition
-4. if one exists check the condiotns on it and complete its instructions if its true
-5. repeat 3-4 till no more else if statemets exists
-6. go to the else statment only if every other statment reutrned false and complete its instrucitons.
-
--current position:
------------------------------
--the logic for the else if statement is the same as the if statement
--the problem is finding a way for the condtions to be tracked accordingly
+methods:
+------------------------
+-my first method is turning the logic of how the while and for loop functional
+into their own functions , so they are kept sepwerate which makes things much 
+easier to debug which i should probably have done from the start but
+optimzation is for a later date.
+-by creating basic logic first this allows both the for and while to share some
+aspects of eachother.

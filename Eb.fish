@@ -84,7 +84,9 @@ function run_script --argument file_path
         if test -z "$trimmed"; or string match -q "#*" "$trimmed"
             continue
         end    
-
+#ITERATION HANDLING------------------------------------------------------------------------
+        if string match -qr '^while\s*\((.*)\)\s*\{$' "$trimmed"
+            
 #SELECTION HANDLING------------------------------------------------------------------------
         
         #IF STATEMENT
