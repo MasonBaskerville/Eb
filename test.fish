@@ -1,4 +1,17 @@
 #!/usr/bin/env fish
+function eval_math --argument expr
+    for v in (string match -ra '\b[a-zA-Z_][a-zA-Z0-9_]*\b' "$expr")
+        if set -q $v
+            set -l v_val $$v
+            set expr (string replace -ra "\\b$v\\b" "$v_val" "$expr")
+        end
+    end
+    while string match -qr '([^\s()]+|\([^()]+\))\s*//\s*([^\s()]+|\([^()]+\))' "$expr"
+        set expr (string replace -r '([^\s()]+|\([^()]+\))\s*//\s*([^\s()]+|\([^()]+\))' 'floor(($1)/($2))' "$expr")
+    end
+    math "$expr" 2>/dev/null
+end
+
 function eval_cond --argument cond_expr
     for v in (string match -ra '\b[a-zA-Z_][a-zA-Z0-9_]*\b' "$cond_expr")
         if test "$v" = "true" -o "$v" = "false"
@@ -51,25 +64,33 @@ function eval_cond --argument cond_expr
         return 1
     end
 
-    set -l num_parts (string match -r '^\s*(-?[0-9]+(?:\.[0-9]+)?)\s*(==|!=|>=|<=|>|<)\s*(-?[0-9]+(?:\.[0-9]+)?)\s*$' "$cond_expr")
+    set -l num_parts (string match -r '^\s*(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+?)\s*$' "$cond_expr")
     if test (count $num_parts) -eq 4
-        set -l lhs $num_parts[2]
+        set -l lhs_raw $num_parts[2]
         set -l op $num_parts[3]
-        set -l rhs $num_parts[4]
-        set -l diff (math "$lhs - $rhs")
-        switch $op
-            case '>'
-                test "$diff" -gt 0 2>/dev/null; or string match -qr '^[0-9]*\.[1-9]|^[1-9][0-9]*\.' "$diff"; and return 0
-            case '<'
-                string match -qr '^-' "$diff"; and return 0
-            case '>='
-                not string match -qr '^-' "$diff"; and return 0
-            case '<='
-                test "$diff" = "0"; or string match -qr '^-' "$diff"; and return 0
-            case '=='
-                test "$diff" = "0"; and return 0
-            case '!='
-                test "$diff" != "0"; and return 0
+        set -l rhs_raw $num_parts[4]
+        
+        set -l lhs (eval_math "$lhs_raw")
+        set -l lhs_status $status
+        set -l rhs (eval_math "$rhs_raw")
+        set -l rhs_status $status
+        
+        if test $lhs_status -eq 0 -a $rhs_status -eq 0
+            set -l diff (math "$lhs - $rhs")
+            switch $op
+                case '>'
+                    test "$diff" -gt 0 2>/dev/null; or string match -qr '^[0-9]*\.[1-9]|^[1-9][0-9]*\.' "$diff"; and return 0
+                case '<'
+                    string match -qr '^-' "$diff"; and return 0
+                case '>='
+                    not string match -qr '^-' "$diff"; and return 0
+                case '<='
+                    test "$diff" = "0"; or string match -qr '^-' "$diff"; and return 0
+                case '=='
+                    test "$diff" = "0"; and return 0
+                case '!='
+                    test "$diff" != "0"; and return 0
+            end
         end
     end
     return 1
@@ -284,7 +305,7 @@ function run_script --argument file_path
             end
 
             for j in (seq $target_idx $stack_len)
-                set exec_stack[$i] 0
+                set exec_stack[$j] 0
             end
             set pc (math "$pc+1")
             continue
@@ -316,11 +337,12 @@ function run_script --argument file_path
 
                 #FLO data type
                 else if test "$expected_type" = "FLO"
-                    if string match -r -- '^-?[0-9]+(\.[0-9]+)$' "$user_input" > /dev/null
-                        if not string match -r '\.' "$user_input" > /dev/null
-                            set user_input "$user_input.0"
+                    set -l calc_val (eval_math "$user_input")
+                    if test $status -eq 0; and string match -r -- '^-?[0-9]+(\.[0-9]+)$' "$calc_val" > /dev/null
+                        if not string match -r '\.' "$calc_val" > /dev/null
+                            set user_input "$calc_val.0"
                         end
-                        set -g $var_name "$user_input"
+                        set -g $var_name "$calc_val"
                     else
                         echo "TypeError : variable '$var_name' expected type FLO, but got '$user_input'"
                         return 1
@@ -389,8 +411,9 @@ function run_script --argument file_path
 
             #INT data type
             if test "$var_type" = "INT"
-                if string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
-                    set -g $var_name "$user_input"
+            set -l calc_val (eval_math "$user_input")
+                if test $status -eq 0; and string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
+                    set -g $var_name "$calc_val"
                 else
                     echo "TypeError: variable '$var_name' expected type INT, but got '$user_input'"
                     return 1
@@ -398,11 +421,12 @@ function run_script --argument file_path
             
             #FLO data type
             else if test "$var_type" = "FLO"
-                if string match -r -- '^-?[0-9]+(\.[0-9]+)?$' "$user_input" > /dev/null
-                    if not string match -r '\.' "$user_input" > /dev/null
+                set -l calc_val (eval_math "$user_input")
+                if test $status -eq 0; and string match -r -- '^-?[0-9]+(\.[0-9]+)?$' "$user_input" > /dev/null
+                    if not string match -r '\.' "$calc_val" > /dev/null
                         set user_input "$user_input.0"
                     end
-                    set -g $var_name "$user_input"
+                    set -g $var_name "$calc_val"
                 else
                     echo "TypeError : variable '$var_name' expected type FLO, but got '$user_input'"
                     return 1

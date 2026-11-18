@@ -1,14 +1,14 @@
-Set INT x = 1
-Set INT y = 2
-while(true){
-    if(x==0){
-        OutputLine:"FIRST"
-    }
-    else{
-        OutputLine:"SECONDARY"
-    }
-}
+Set INT num = 4829
+Set INT digits = 0
 
+while(true){
+    if (num==0){
+        break
+    }
+    num = num // 10
+    digits = digits + 1
+}
+OutputLine : "total digits: {digits}
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
 #degrees, the conversion must be inputed into the variable input: Set FLO z = sin(30 * pi/180)
