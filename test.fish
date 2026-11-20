@@ -9,6 +9,8 @@ function eval_math --argument expr
     while string match -qr '([^\s()]+|\([^()]+\))\s*//\s*([^\s()]+|\([^()]+\))' "$expr"
         set expr (string replace -r '([^\s()]+|\([^()]+\))\s*//\s*([^\s()]+|\([^()]+\))' 'floor(($1)/($2))' "$expr")
     end
+    
+
     math "$expr" 2>/dev/null
 end
 
@@ -46,6 +48,7 @@ function eval_cond --argument cond_expr
                 test "$lhs" = "$rhs"; and return 0
             case '!='
                 test "$lhs" != "$rhs"; and return 0
+            
         end
         return 1
     end
@@ -328,8 +331,9 @@ function run_script --argument file_path
 
                 #INT data type
                 if test "$expected_type" = "INT"
-                    if string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
-                        set -g $var_name "$user_input"
+                set -l calc_val (eval_math "$user_input")
+                    if test $status -eq 0; and string match -r -- '^-?[0-9]+$' "$user_input" > /dev/null
+                        set -g $var_name "$calc_val"
                     else
                         echo "TypeError : variable '$var_name' expected type INT, but got '$user_input'"
                         return 1
@@ -377,20 +381,25 @@ function run_script --argument file_path
             end
 
             if set -q $var_name
-                set -l eval_expr "$var_val"
-                for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$eval_expr")
-                   if set -q $v
-                        set -l v_val $$v 
-                        set eval_expr (string replace -ra "\\b$v\\b" "$v_val" "$eval_expr")
-                    end
-                end
-
-                set -l calculated_val (math "$eval_expr" 2>/dev/null)
+                set -l calculated_val (eval_math "$var_val")
                 if test $status -eq 0
                     set -g $var_name $calculated_val
                 else
                     echo "Error : invalid expression for reassignment of '$var_name'"
                 end
+                #for v in (string match -ra '[a-zA-Z_][a-zA-Z0-9_]*' "$eval_expr")
+                #   if set -q $v
+                #        set -l v_val $$v 
+                #        set eval_expr (string replace -ra "\\b$v\\b" "$v_val" "$eval_expr")
+                #    end
+                #end
+
+                #set -l calculated_val (math "$eval_expr" 2>/dev/null)
+                #if test $status -eq 0
+                #    set -g $var_name $calculated_val
+                #else
+                #    echo "Error : invalid expression for reassignment of '$var_name'"
+                #end
             else
                 echo "NameError : variable '$var_name' is not defined, use 'Set' first"
             end

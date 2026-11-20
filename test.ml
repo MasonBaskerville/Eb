@@ -1,14 +1,17 @@
-Set INT num = 4829
-Set INT digits = 0
+Set INT num = 0
 
 while(true){
-    if (num==0){
-        break
+    if (num%2==0){
+        num = num + 1
+        OutputLine: "even"
     }
-    num = num // 10
-    digits = digits + 1
+    else{
+        num = num + 1
+        OutputLine: "odd"
+    }
+    
 }
-OutputLine : "total digits: {digits}
+OutputLine : "total digits: {digits}"
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
 #degrees, the conversion must be inputed into the variable input: Set FLO z = sin(30 * pi/180)
