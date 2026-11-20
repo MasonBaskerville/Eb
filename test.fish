@@ -82,13 +82,14 @@ function eval_cond --argument cond_expr
             set -l diff (math "$lhs - $rhs")
             switch $op
                 case '>'
-                    test "$diff" -gt 0 2>/dev/null; or string match -qr '^[0-9]*\.[1-9]|^[1-9][0-9]*\.' "$diff"; and return 0
+                    #string match -qr -- '^[0-9]*\.[1-9]|^[1-9][0-9]*\.' "$diff"; and return 0
+                    string match -qr -- '^-' "$diff"; and return 0
                 case '<'
-                    string match -qr '^-' "$diff"; and return 0
+                    string match -qr -- '^-' "$diff"; and return 0
                 case '>='
-                    not string match -qr '^-' "$diff"; and return 0
+                    not string match -qr -- '^-' "$diff"; and return 0
                 case '<='
-                    test "$diff" = "0"; or string match -qr '^-' "$diff"; and return 0
+                    string match -qr -- '^-' "$diff"; and return 0
                 case '=='
                     test "$diff" = "0"; and return 0
                 case '!='

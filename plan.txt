@@ -1,32 +1,5 @@
-iteration is the next stage
+while loop has been completed with logical condtions and simply using true.
 
--introduce a simple while loop with true or false condtions where break can be used to escape
-the while loop, then later allow variable conditions to dictate when to break out of a while 
-loop
-
--then a for loop, make a for loop in format : for (int i=0:i<"whatever it may be":i++){}
-then allow for more complex for loops, e.g. for var in list. etc. however this adidtional for loop
-may require a new data structure, which would be lists, arrays, tuples. etc
-
-challenges:
--------------------
--as this whole file runs thorugh a for loop, this will need to be changed in order to
-keep the while loops functional and simple to program and maintain without encoutnering bugs
-
--being able to jump from one line to another, so hopefully fish has a built in jump
-command which would be very useful.
-
--updating conditions without breaking the functionality of the while and for
-loops.
-
--when a break command is seen, knowing which line to skip to, this may reintroduce
-the issue i had with th else if statement.
-
-methods:
-------------------------
--my first method is turning the logic of how the while and for loop functional
-into their own functions , so they are kept sepwerate which makes things much 
-easier to debug which i should probably have done from the start but
-optimzation is for a later date.
--by creating basic logic first this allows both the for and while to share some
-aspects of eachother.
+next is to do a for loop, which will be significantly mroe difficult as there is multiple things to think absolute
+there will be 3 parts within a for loop: variable creation, variable comparison, varibale increase/or decrease. this is a simple
+for loop, in the future a diffrent for loop will be made . which will be like C#'s foreach loop.
