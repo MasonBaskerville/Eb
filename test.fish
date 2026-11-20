@@ -316,12 +316,14 @@ function run_script --argument file_path
 
 #VARIABLE HANDLING AND MANIPULATION--------------------------------------------------------
 
-        if string match -qr '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$trimmed"    
-            set -l match_arr (string match -r '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$trimmed" )
+        if string match -qr '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*(\+=|-=|=)\s*(.+)$' "$trimmed"    
+            set -l match_arr (string match -r '^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*(\+=|-=|=)\s*(.+)$' "$trimmed" )
             set -l var_name $match_arr[2]
-            set -l var_val $match_arr[3]
+            set -l op $match_arr[3]
+            set -l var_val $match_arr[4]
             if not set -q $var_name
-                echo "NameError : variable '$var_name' is not defined, use 'Set' to define a variable"
+                echo "NameError : variable '$var_name' is no t defined, use 'Set' to define a variable"
+                set pc (math "$pc+1")
                 return 1
             end
             set -l var_type_var "__type_$var_name"
@@ -379,6 +381,28 @@ function run_script --argument file_path
                 set pc (math "$pc+1")
                 continue
             end
+
+            #+= , -= , = OPERATORS
+            if test "$op" = "+="
+                set -l eval_rhs (eval_math "$var_val")
+                set -l calculated_val (eval_math "$$var_name + $eval_rhs")
+                set -g $var_name $calculated_val
+                
+            else if test "$op" = "-="
+                set -l eval_rhs (eval_math "$var_val")
+                set -l calculated_val (eval_math "$$var_name - $eval_rhs")
+                set -g $var_name $calculated_val
+            else
+                set -l calc_val (eval_math "$var_val")
+                if test $status -eq 0
+                    set -g $var_name $calculated_val
+                else
+                    echo "Error : invalid expression for reassigmnemt of '$var_name'"
+                end
+            end
+            set pc (math "$pc+1")
+            continue
+            
 
             if set -q $var_name
                 set -l calculated_val (eval_math "$var_val")

@@ -1,12 +1,13 @@
 Set INT num = 0
 
 while(true){
+    num+=1
     if (num%2==0){
-        num = num + 1
+        
         OutputLine: "even"
     }
     else{
-        num = num + 1
+        
         OutputLine: "odd"
     }
     
