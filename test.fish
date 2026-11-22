@@ -343,7 +343,8 @@ function run_script --argument file_path
             if test "$parent_exec" -eq 0; or test "$done_stack[-1]" -eq 1
                 set exec_stack[-1] 0
             else
-                set -l cond_expr (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")[3]
+                set -l elif_parts (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")
+                set cond_expr $elif_parts
                 if eval_cond "$cond_expr"
                     set exec_stack[-1] 1
                     set done_stack[-1] 1
@@ -431,7 +432,7 @@ function run_script --argument file_path
             set -l target_idx 0
             set -l stack_len (count $block_type)
             for i in (seq $stack_len -1 1)
-                if test "$block_type[$i]" = "while" -o "$block_type" = "for"
+                if test "$block_type[$i]" = "while" -o "$block_type[$i]" = "for"
                     set target_idx $i
                     break
                 end

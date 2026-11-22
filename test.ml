@@ -1,10 +1,19 @@
-for (Set INT test = 0 : test <= 5 : test = test + 1){
-    if (test%2 == 0){
-        OutputLine : "{test} is even"
+for (Set INT i = 0 : i <= 100 : i = i + 1){
+    if(i%5 == 0){
+        if(i%3 == 0){
+            OutputLine : "{i} fizzbuzz"
+        }
+        else{
+            OutputLine : "{i} fizz"
+        }
+    }
+    else if (i%3 == 0){
+        OutputLine : "{i} buzz"
     }
     else{
-        OutputLine : "{test} is odd"
+        OutputLine : "{i}"
     }
+
 }
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
