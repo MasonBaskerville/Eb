@@ -83,13 +83,13 @@ function eval_cond --argument cond_expr
             switch $op
                 case '>'
                     #string match -qr -- '^[0-9]*\.[1-9]|^[1-9][0-9]*\.' "$diff"; and return 0
-                    string match -qr -- '^-' "$diff"; and return 0
+                    test "$diff" != "0"; and not string match -qr -- '^-' "$diff"; and return 0
                 case '<'
                     string match -qr -- '^-' "$diff"; and return 0
                 case '>='
                     not string match -qr -- '^-' "$diff"; and return 0
                 case '<='
-                    string match -qr -- '^-' "$diff"; and return 0
+                    test "$diff" = "0"; or string match -qr -- '^-' "$diff"; and return 0
                 case '=='
                     test "$diff" = "0"; and return 0
                 case '!='
@@ -97,6 +97,74 @@ function eval_cond --argument cond_expr
             end
         end
     end
+    return 1
+end
+
+function exec_assign --argument stmt
+    set -l stmt (string trim "$stmt")
+    if string match -qr '^Set\s+([A-Z]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt"
+        set -l matches (string match -r '^Set\s+([A-Z]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt")
+        set -l var_type $matches[2]
+        set -l var_name (string trim "$matches[3]")
+        set -l var_val (string trim "$matches[4]")
+        set -g "__type_$var_name" "$var_type"
+
+        if test "$var_type" = "INT"
+            set -l calc (eval_math "$var_val")
+            if test $status -eq 0; and string match -qr '^-?[0-9]+$' "$calc"
+                set -g $var_name "$calc"
+                return 0
+            else
+                echo "TypeError : variable '$var_name' expected type INT, but got '$var_val'"
+                return 1
+            end
+        else if test "$var_type" = "FLO"
+            set -l calc (eval_math "$var_val")
+            if test $status -eq 0; and string match -qr '^-?[0-9]+(\.[0-9]+)?$' "$calc"
+                if not string match -qr '\.' "$calc"
+                    set calc "$calc.0"
+                end
+                set -g $var_name "$calc"
+                return 0
+            else
+                echo "TypeError : variable '$var_name' expected type FLO, but got '$var_val'"
+                return 1
+            end
+        end
+        return 1
+    end
+
+    if string match -qr '^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt"
+        set -l match_arr (string match -r '^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt")
+        set -l var_name $match_arr[2]
+        set -l var_val (string trim "$match_arr[3]")
+
+        if not set -q $var_name 
+            echo "NameError : variable '$var_name' is not defined use 'Set' to create a variable"
+            return 1
+        end
+
+        set -l var_type_var "__type_$var_name"
+        set -l expected_type $$var_type_var
+        set -l calculated_val (eval_math "$var_val")
+
+        if test $status -eq 0
+            if test "$expected_type" = "FLO"; and not string match -qr '\.' "$calculated_val"
+                set calculated_val "$calculated_val.0"
+            end
+            if test "$expected_type" = "INT"; and not string match -qr '^-?[0-9]+$' "$calculated_val"
+                echo "TypeError : variable '$var_name' expected type INT, but got '$var_val'"
+                return 1
+            end
+            set -g $var_name "$calculated_val"
+            return 0
+        else
+            echo "Error : invlaid expression for reassignment of '$var_name'"
+            return 1
+        end
+    end
+
+    echo "SyntaxError : invalid assignment in for loop '$stmt'"
     return 1
 end
 
@@ -122,6 +190,8 @@ function run_script --argument file_path
     set -l done_stack 0
     set -g pending_close 0
     set -l block_type "root"
+    set -g loop_repeat 0
+    set -g loop_step ""
     set -l loop_start 0
 
     while test "$pc" -le "$total_lines"
@@ -138,6 +208,7 @@ function run_script --argument file_path
         #    continue
         #end    
 #ITERATION HANDLING------------------------------------------------------------------------
+    #WHILE LOOP
     if string match -qr '^while\s*\((.*)\)\s*\{$' "$trimmed"
         if test "$pending_close" = "1"
             set -g pending_close 0
@@ -145,6 +216,7 @@ function run_script --argument file_path
             set -e done_stack[-1]
             set -e block_type[-1]
             set -e loop_start[-1]
+            set -e loop_step[-1]
         end
 
         set -l parent_exec $exec_stack[-1]
@@ -153,6 +225,7 @@ function run_script --argument file_path
             set -a done_stack 1
             set -a block_type "while"
             set -a loop_start $pc
+            set -a loop_step ""
         else
             set -l cond_expr (string match -r '^while\s*\((.*)\)\s*\{$' "$trimmed")[2]
             if eval_cond "$cond_expr"
@@ -160,17 +233,66 @@ function run_script --argument file_path
                 set -a done_stack 1
                 set -a block_type "while"
                 set -a loop_start $pc
+                set -a loop_step ""
             else
                 set -a exec_stack 0
                 set -a done_stack 1
                 set -a block_type "while"
                 set -a loop_start $pc
+                set -a loop_step ""
             end
         end
         set pc (math "$pc+1")
         continue
     end
-            
+
+    #FOR LOOP
+    if string match -qr '^for\s*\(([^:]+):([^:]+):([^)]+)\)\s*\{$' "$trimmed"
+        if test "$pending_close" = "1"
+            set -g pending_close 0
+            set -e exec_stack[-1]
+            set -e done_stack[-1]
+            set -e block_type[-1]
+            set -e loop_start[-1]
+            set -e loop_step[-1]
+        end
+        set -l parts (string match -r '^for\s*\(([^:]+):([^:]+):([^)]+)\)\s*\{$' "$trimmed")
+        set -l init_stmt (string trim "$parts[2]")
+        set -l cond_expr (string trim "$parts[3]")
+        set -l step_stmt (string trim "$parts[4]")
+
+        set -l parent_exec $exec_stack[-1]
+        if test "$parent_exec" -eq 0
+            set -g loop_repeat 0
+            set -a exec_stack 0
+            set -a done_stack 1
+            set -a block_type "for"
+            set -a loop_start $pc
+            set -a loop_step "$step_stmt"
+        else
+            if test "$loop_repeat" = "1"
+                set -g loop_repeat 0
+                exec_assign "$step_stmt"; or return 1
+            else
+                exec_assign "$init_stmt"; or return 1
+            end
+            if eval_cond "$cond_expr"
+                set -a exec_stack 1
+                set -a done_stack 1
+                set -a block_type "for"
+                set -a loop_start $pc
+                set -a loop_step "$step_stmt"
+            else
+                set -a exec_stack 0
+                set -a done_stack 1
+                set -a block_type "for"
+                set -a loop_start $pc
+                set -a loop_step "$step_stmt"
+            end
+        end
+        set pc (math "$pc+1")
+        continue
+    end
 #SELECTION HANDLING------------------------------------------------------------------------
         
         #IF STATEMENT
@@ -181,6 +303,7 @@ function run_script --argument file_path
                 set -e done_stack[-1]
                 set -e block_type[-1]
                 set -e loop_start[-1]
+                set -e loop_step[-1]
             end
             set -l parent_exec $exec_stack[-1]
             if test "$parent_exec" -eq 0
@@ -188,6 +311,7 @@ function run_script --argument file_path
                 set -a done_stack 1
                 set -a block_type "if"
                 set -a loop_start 0
+                set -a loop_step ""
             else
                 set -l cond_expr (string match -r '^if\s*\((.*)\)\s*\{$' "$trimmed")[2]
                 if eval_cond "$cond_expr"
@@ -195,11 +319,13 @@ function run_script --argument file_path
                     set -a done_stack 1
                     set -a block_type "if"
                     set -a loop_start 0
+                    set -a loop_step ""
                 else
                     set -a exec_stack 0
                     set -a done_stack 0
                     set -a block_type "if"
                     set -a loop_start 0
+                    set -a loop_step ""
                 end
             end
             set pc (math "$pc+1")
@@ -254,20 +380,26 @@ function run_script --argument file_path
                 set -e done_stack[-1]
                 set -e block_type[-1]
                 set -e loop_start[-1]
+                set -e loop_step[-1]
                 set -g pending_close 0
             end
             if test (count $exec_stack) -le 1
                 echo "SyntaxError: unexpected '}'"
                 return 1
             end
-            if test "$block_type[-1]" = "while"
+            if test "$block_type[-1]" = "while" -o "$block_type[-1]" = "for"
                 set -l jump_target $loop_start[-1]
                 set -l was_running $exec_stack[-1]
+                set -l ltype $block_type[-1]
                 set -e exec_stack[-1]
                 set -e done_stack[-1]
                 set -e block_type[-1]
                 set -e loop_start[-1]
+                set -e loop_step[-1]
                 if test "$was_running" -eq 1
+                    if test "$ltype" = "for"
+                        set -g loop_repeat 1
+                    end
                     set pc $jump_target
                     continue
                 else
@@ -286,6 +418,7 @@ function run_script --argument file_path
             set -e done_stack[-1]
             set -e block_type[-1]
             set -e loop_start[-1]
+            set -e loop_step[-1]
         end
 
         if test "$exec_stack[-1]" -eq 0
@@ -298,7 +431,7 @@ function run_script --argument file_path
             set -l target_idx 0
             set -l stack_len (count $block_type)
             for i in (seq $stack_len -1 1)
-                if test "$block_type[$i]" = "while"
+                if test "$block_type[$i]" = "while" -o "$block_type" = "for"
                     set target_idx $i
                     break
                 end

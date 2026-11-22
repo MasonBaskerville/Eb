@@ -1,10 +1,11 @@
-Set INT num = 10
-
-while(5<num){
-    OutputLine : "this is an emulated for loop"
-    
+for (Set INT test = 0 : test <= 5 : test = test + 1){
+    if (test%2 == 0){
+        OutputLine : "{test} is even"
+    }
+    else{
+        OutputLine : "{test} is odd"
+    }
 }
-OutputLine : "broke free from the emulated for loop"
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
 #degrees, the conversion must be inputed into the variable input: Set FLO z = sin(30 * pi/180)
