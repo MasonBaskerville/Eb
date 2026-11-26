@@ -119,7 +119,7 @@ run the interpreter
 fish Eb.fish test.ml
 ```
 
-# linux set up
+#linux set up
 ```bash
 sudo apt install fish
 ```
