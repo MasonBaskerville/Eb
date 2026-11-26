@@ -1,25 +1,25 @@
 # Eb
 my own scripting language in fish
 
-the aim of Eb is to make a language which is a bridge between something like python and C/C#. as i found when i started the jump was understandable but small things made no sense. so by mixing the 2 it allows for an easier gateway into C/C#. i swapped out syntax from other languges which would have been a bti confusing for some. e.g. **Console.WriteLine()** got replaces with **OutputLine :** this makes it little more obvious what the syntax does. this is the exact same things with variable creation. variables need to be **Set** in order to be created, which is diffrent from how python runs but more similar to C and C#. **this was not designed to be used a full language like C or C# or even python but a scripting language to bridge the 2**
+the aim of Eb is to make a language which is a bridge between something like python and C/C#. as i found when i started the jump was understandable but small things made no sense. so by mixing the 2 it allows for an easier gateway into C/C#. i swapped out syntax from other languages which would have been a bit confusing for some. e.g. **Console.WriteLine()** got replaces with **OutputLine :** this makes it little more obvious what the syntax does. this is the exact same things with variable creation. variables need to be **Set** in order to be created, which is different from how python runs but more similar to C and C#. **this was not designed to be used a full language like C or C# or even python but a scripting language to bridge the 2**
 
-there are still some bugs thorughout which need work. such as some small math error when using for loops which contain else if statements and nested selection. some math operators cannot be used in for loops *e.g.* +=.
+there are still some bugs throughout which need work. such as some small math error when using for loops which contain else if statements and nested selection. some math operators cannot be used in for loops *e.g.* +=.
 the next major things to add are syntax like **AND** and **OR** and the addition of adding subprograms to this.
 ## current syntax
 
 ### variable handling
 - Set : creates a variable
-- INT : used to decalre an integer type
+- INT : used to declare an integer type
 - FlO : used to declare a floating type
-- STR : used to decalre a string type
+- STR : used to declare a string type
 - CHA : used to declare a character type
-- BOO : used to decalre a boolean type
+- BOO : used to declare a boolean type
 
 - READ : user input
 
 ### math operators
-- '+' : sums varibales or integers / floats
-- '-' : subtracts varibales or integers/floats
+- '+' : sums variables or integers / floats
+- '-' : subtracts variables or integers/floats
 - '+=' : adds to a variable and reassigns 
 - '-=' : subtracts from a variable and reassigns
 - '<' : less than operator
@@ -30,25 +30,25 @@ the next major things to add are syntax like **AND** and **OR** and the addition
 - '==' : equal to operator
 
 ### Output
-- OutputLine : "this outputs on a seprate line each time"
+- OutputLine : "this outputs on a separate line each time"
 
 - Output : "this outputs on the same line"
 
-- Output : "this is outputting a varibale {varibale}"  + this works the same for OutputLine
+- Output : "this is outputting a variable {variable}"  + this works the same for Output Line
 
 ### selection
-- if(){} : if somethign is true, which is held in the () , then what ever is in the {} gets completed
--else if(){} : as a secondary if , an if must be used first then if the if returns fasle then if a else if is present the conditional check gets ran and if true then whatever is in the {} will be completed.
--else{} : if the if and/or else if statment returns false then whatever is in the {} will get completed.
+- if(){} : if something is true, which is held in the () , then what ever is in the {} gets completed
+- else if(){} : as a secondary if , an if must be used first then if the if returns false then if a else if is present the conditional check gets ran and if true then whatever is in the {} will be completed.
+- else{} : if the if and/or else if statement returns false then whatever is in the {} will get completed.
 
 ### iteration
--break : used to forcefully exit a loop
--while(){} : whilst whatever in the () is true, whatever is in the {} will run forever unless the condintion is changed or stopped by the break command.
--for(init : condition : incrementation){} : the 'init' is where we create a variable to measure for the count controlled loop. the 'condition' checks something against this initialized variable. the 'incrementation' is used to increment thsi initialised variable to creat the count controlled loop. then whilst the condtion is met, whateevr is in the {} will run.
+- break : used to forcefully exit a loop
+- while(){} : whilst whatever in the () is true, whatever is in the {} will run forever unless the condition is changed or stopped by the break command.
+- for(init : condition : incrementation){} : the 'init' is where we create a variable to measure for the count controlled loop. the 'condition' checks something against this initialized variable. the 'incrementation' is used to increment this initialized variable to create the count controlled loop. then whilst the condition is met, whatever is in the {} will run.
 
 ### math functions
 - all the regular fish math functions work automatically, this covers a wide range from trigonometry to calculus
-- as a pre-warning . if you are to use sin,cos tan,sec etc. it must be used in radians, or use the formuale (pi*n)/180. this will convert degrees to radians.
+- as a pre-warning . if you are to use sin,cos tan,sec etc. it must be used in radians, or use the formulae (pi*n)/180. this will convert degrees to radians.
 
 # examples
 ## variable an output syntax
@@ -101,7 +101,7 @@ while(script != fish){
 ```
 
 # Set up (windows 10 & 11)
-run the follwoing commands to set up the environment of FISH
+run the following commands to set up the environment of FISH
 ```powershell
 wsl -- install -d ubuntu
 ```
@@ -129,7 +129,7 @@ fish
 ```
 run the interpreter :
 ```text
-fih Eb.fish test.ml
+fish Eb.fish test.ml
 ```
 
 if you use arch linux you should already have fish as the native scripting language and can just run the following command :
@@ -139,7 +139,7 @@ fish Eb.fish test.ml
 
 # files in this git repo
 - Eb.fish : this is the main interpreter
-- test.fish : used for if you want to imporvr , fix or add something, so your Eb.fish remains working and can be used as a backup.
+- test.fish : used for if you want to improve , fix or add something, so your Eb.fish remains working and can be used as a backup.
 - test.ml : this is where you write the Eb code.
 - plan.txt : is used so you can write down what the goal is to add/fix or improve something to Eb
 
