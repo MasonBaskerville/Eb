@@ -119,7 +119,7 @@ run the interpreter
 fish Eb.fish test.ml
 ```
 
-#linux set up
+# linux set up
 ```bash
 sudo apt install fish
 ```
@@ -136,6 +136,13 @@ if you use arch linux you should already have fish as the native scripting langu
 ```text
 fish Eb.fish test.ml
 ```
+
+# files in this git repo
+- Eb.fish : this is the main interpreter
+- test.fish : used for if you want to imporvr , fix or add something, so your Eb.fish remains working and can be used as a backup.
+- test.ml : this is where you write the Eb code.
+- plan.txt : is used so you can write down what the goal is to add/fix or improve something to Eb
+
 
 
 
