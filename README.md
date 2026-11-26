@@ -1,8 +1,10 @@
 # Eb
 my own scripting language in fish
 
-at the moment there are only 3 things which can be done. they are all a work in progress so they are the basic version of the syntax.
+the aim of Eb is to make a language which is a bridge between something like python and C/C#. as i found when i started the jump was understandable but small things made no sense. so by mixing the 2 it allows for an easier gateway into C/C#. i swapped out syntax from other languges which would have been a bti confusing for some. e.g. **Console.WriteLine()** got replaces with **OutputLine :** this makes it little more obvious what the syntax does. this is the exact same things with variable creation. variables need to be **Set** in order to be created, which is diffrent from how python runs but more similar to C and C#. **this was not designed to be used a full language like C or C# or even python but a scripting language to bridge the 2**
 
+there are still some bugs thorughout which need work. such as some small math error when using for loops which contain else if statements and nested selection. some math operators cannot be used in for loops *e.g.* +=.
+the next major things to add are syntax like **AND** and **OR** and the addition of adding subprograms to this.
 ## current syntax
 
 ### variable handling
@@ -96,6 +98,12 @@ while(script != fish){
         OutputLine : "try again"
     }
 }
+```
+
+# Set up (windows 10 & 11)
+run the follwoing commands to set up the environment of FISH
+```powershell
+wsl -- install -d ubuntu
 ```
 
 
