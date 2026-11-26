@@ -116,7 +116,25 @@ fish
 ```
 run the interpreter
 ```text
-fish interpreter.fish example.txt
+fish Eb.fish test.ml
+```
+
+#linux set up
+```bash
+sudo apt install fish
+```
+start fish : 
+```bash
+fish
+```
+run the interpreter :
+```text
+fih Eb.fish test.ml
+```
+
+if you use arch linux you should already have fish as the native scripting language and can just run the following command :
+```text
+fish Eb.fish test.ml
 ```
 
 
