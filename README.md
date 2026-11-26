@@ -105,6 +105,19 @@ run the follwoing commands to set up the environment of FISH
 ```powershell
 wsl -- install -d ubuntu
 ```
+restart if prompted then open ubuntu and run:
+```bash
+sudo apt update
+sudo apt install fish
+```
+start fish : 
+```bash
+fish
+```
+run the interpreter
+```text
+fish interpreter.fish example.txt
+```
 
 
 
