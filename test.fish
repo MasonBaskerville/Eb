@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-function eval_math --argument expr
+function eval_math --argument-names expr
     for v in (string match -ra '\b[a-zA-Z_][a-zA-Z0-9_]*\b' "$expr")
         if set -q $v
             set -l v_val $$v
@@ -14,7 +14,7 @@ function eval_math --argument expr
     math "$expr" 2>/dev/null
 end
 
-function eval_cond --argument cond_expr
+function eval_cond --argument-names cond_expr
     for v in (string match -ra '\b[a-zA-Z_][a-zA-Z0-9_]*\b' "$cond_expr")
         if test "$v" = "true" -o "$v" = "false"
             continue
@@ -100,7 +100,7 @@ function eval_cond --argument cond_expr
     return 1
 end
 
-function exec_assign --argument stmt
+function exec_assign --argument-names stmt
     set -l stmt (string trim "$stmt")
     if string match -qr '^Set\s+([A-Z]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt"
         set -l matches (string match -r '^Set\s+([A-Z]+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$' "$stmt")
@@ -168,7 +168,7 @@ function exec_assign --argument stmt
     return 1
 end
 
-function run_script --argument file_path
+function run_script --argument-names file_path
     if not test -f "$file_path"
         echo "error: File '$file_path' not found"
         return 1
@@ -340,11 +340,14 @@ function run_script --argument file_path
                 return 1
             end
             set -l parent_exec $exec_stack[-2]
-            if test "$parent_exec" -eq 0; or test "$done_stack[-1]" -eq 1
+            set -l elif_parts (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")
+            set cond_expr $elif_parts[-1]
+
+            if test "$parent_exec" -eq 0
+                set exec_stack[-1] 0
+            else if test "$done_stack[-1]" -eq 1
                 set exec_stack[-1] 0
             else
-                set -l elif_parts (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")
-                set cond_expr $elif_parts
                 if eval_cond "$cond_expr"
                     set exec_stack[-1] 1
                     set done_stack[-1] 1
@@ -355,6 +358,20 @@ function run_script --argument file_path
             set pc (math "$pc+1")
             continue
         end
+
+            
+            #if test "$parent_exec" -eq 0; or test "$done_stack[-1]" -eq 1
+            #    set exec_stack[-1] 0
+            #else
+            #    set -l elif_parts (string match -r '^(\}\s*)?else\s+if\s*\((.*)\)\s*\{$' "$trimmed")
+            #    set cond_expr $elif_parts[-1]
+            #    if eval_cond "$cond_expr"
+            #        set exec_stack[-1] 1
+            #        set done_stack[-1] 1
+            #    else
+            #        set exec_stack[-1] 0
+            #    end
+            #end
 
         #ELSE STATEMENT
         if string match -qr '^(\}\s*)?else\s*\{$' "$trimmed"
@@ -530,7 +547,7 @@ function run_script --argument file_path
             else
                 set -l calc_val (eval_math "$var_val")
                 if test $status -eq 0
-                    set -g $var_name $calculated_val
+                    set -g $var_name $calc_val
                 else
                     echo "Error : invalid expression for reassigmnemt of '$var_name'"
                 end

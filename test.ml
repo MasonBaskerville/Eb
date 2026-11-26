@@ -1,19 +1,18 @@
-for (Set INT i = 0 : i <= 100 : i = i + 1){
-    if(i%5 == 0){
-        if(i%3 == 0){
-            OutputLine : "{i} fizzbuzz"
+for (Set INT i = 0 : i < 100 : i = i + 1){
+    if (i%5==0){
+        if(i%3==0){
+            OutputLine : "fizzbuzz"
         }
         else{
-            OutputLine : "{i} fizz"
+            OutputLine : "fizz"
         }
     }
-    else if (i%3 == 0){
-        OutputLine : "{i} buzz"
+    else if (i%3==0){
+        OutputLine:"buzz"
     }
     else{
-        OutputLine : "{i}"
+        OutputLine : "none"
     }
-
 }
 
 #in READ.ME include how sin,cos and tan expect radians. so if working with
